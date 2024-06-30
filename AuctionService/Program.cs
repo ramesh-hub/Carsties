@@ -1,5 +1,6 @@
 using AuctionService.Data;
 using Microsoft.EntityFrameworkCore;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,10 +14,23 @@ builder.Services.AddDbContext<AuctionService.Data.AuctionDBContext>(options =>
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        //cfg.Host("localhost", "/", h =>
+        //{
+        //    h.Username("guest");
+        //    h.Password("guest");
+        //});
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-
 app.UseAuthorization();
 
 app.MapControllers();
