@@ -3,6 +3,9 @@ using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Contracts;
+using MassTransit;
+using MassTransit.RabbitMqTransport;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,25 +17,25 @@ namespace AuctionService.Controllers
     {
         private readonly AuctionDBContext _context;
         private readonly IMapper _mapper;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public AuctionsController(AuctionDBContext context, IMapper mapper)
+        public AuctionsController(AuctionDBContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
         {
             _context = context;
             _mapper = mapper;
+            _publishEndpoint = publishEndpoint;
         }
 
         [HttpGet]
         public async Task<ActionResult<List<AuctionDto>>> GetAllAuctions(string date)
         {
-            var query = _context.Auctions
-                .Include(a => a.Item)
-                .OrderBy(a => a.Item.Make).AsQueryable();
+            var query = _context.Auctions.OrderBy(a => a.Item.Make).AsQueryable();
 
             if (!string.IsNullOrEmpty(date))
             {
                 DateTime dateBy = DateTime.UtcNow;
-                DateTime.TryParse(date, out DateTime result);
-                query = query.Where(auction => auction.UpdatedAt.CompareTo(dateBy) > 0);            
+                DateTime.TryParse(date, out dateBy);
+                query = query.Where(auction => auction.UpdatedAt.CompareTo(dateBy.ToUniversalTime()) > 0);            
             }
 
             var auctions = await query.ProjectTo<AuctionDto>(_mapper.ConfigurationProvider).ToListAsync();
@@ -62,12 +65,17 @@ namespace AuctionService.Controllers
             _context.Auctions.Add(auction);
             var result = await _context.SaveChangesAsync() > 0;
 
+            var newauction = _mapper.Map<AuctionDto>(auction);
+
+            var newauctionMessage = _mapper.Map<AuctionCreated>(newauction);
+            await _publishEndpoint.Publish(newauctionMessage);
+
             if(!result)
             {
                 return BadRequest("Could not save changes to the database");
             }
 
-            return CreatedAtAction(nameof(GetAuctionById), new { auction.Id }, _mapper.Map<AuctionDto>(auction));
+            return CreatedAtAction(nameof(GetAuctionById), new { auction.Id }, newauction);
         }
 
         [HttpPut("{id}")]
