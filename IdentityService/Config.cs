@@ -28,6 +28,21 @@ public static class Config
                 RedirectUris = {"https://www.getpostman.com/oauth2/callback"},
                 ClientSecrets = new[] { new Secret("NotASecret".Sha256())},
                 AllowedGrantTypes =  GrantTypes.ResourceOwnerPassword 
+            },
+            new Client
+            {
+                //actual client, no secrets visible to browser, this is all internal.
+                ClientId = "nextApp",
+                ClientName = "nextApp",
+                RedirectUris = {"http://localhost:3000/api/auth/callback/id-server"},
+                //In react native apps like mobile, we cant keep secret and CodeAndClientCredentials and need RequirePkce = true
+                //Since this is a web nextjs app, we dont need RequirePkce this.
+                ClientSecrets = new[] { new Secret("secret".Sha256())},
+                AllowedGrantTypes =  GrantTypes.CodeAndClientCredentials,
+                RequirePkce = false,
+                AllowOfflineAccess = true, //to ask for refresh 
+                AllowedScopes = {"openid", "profile", "auctionApp"},
+                AccessTokenLifetime = 3 * 24 * 30
             }
             /*
             // m2m (machine to machine like using postman) client credentials flow client

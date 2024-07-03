@@ -23,6 +23,13 @@ builder.Services.AddMassTransit(x =>
     //ask MassTransit to use RabbitMq
     x.UsingRabbitMq((context, cfg) =>
     {
+        //re-try option for the search-auction-created queue
+        cfg.ReceiveEndpoint("search-auction-created", e =>
+        {
+            e.UseMessageRetry(r => r.Interval(5, 5));
+            e.ConfigureConsumer<AuctionCreatedConsumer>(context);
+        });
+
         //cfg.Host("localhost", "/", h =>
         //{
         //    h.Username("guest");

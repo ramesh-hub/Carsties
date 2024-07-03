@@ -15,10 +15,20 @@ namespace SearchService.Services
         }
 
         public async Task<List<Item>> GetItemsForSearchDb()
-        {            
-            var lastUpdated = await DB.Find<Item>().Sort(item => item.Descending(i => i.UpdatedAt)).ExecuteFirstAsync();
-            
-            var url = $"{_config["AuctionServiceUrl"] + "/api/auctions?date=" + lastUpdated.UpdatedAt.ToShortDateString()}";
+        {
+            var count = await DB.CountAsync<Item>();
+            var url = string.Empty;
+
+            if (count == 0)
+            {
+                url = $"{_config["AuctionServiceUrl"] + "/api/auctions"}";
+            }
+            else
+            {
+                var lastUpdated = await DB.Find<Item>().Sort(item => item.Descending(i => i.UpdatedAt)).ExecuteFirstAsync();
+
+                url = $"{_config["AuctionServiceUrl"] + "/api/auctions?date=" + lastUpdated.UpdatedAt.ToShortDateString()}";
+            }
             return await _httpClient.GetFromJsonAsync<List<Item>>(url);
 
         }
