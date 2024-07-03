@@ -65,14 +65,22 @@ namespace AuctionService.Controllers
             auction.Seller = User.Identity.Name;
 
             _context.Auctions.Add(auction);
-            var result = await _context.SaveChangesAsync() > 0;
+            //Before outbox: 1. we save to db then 2. send message to service bus
+            //var result = await _context.SaveChangesAsync() > 0;
 
+            //var newauction = _mapper.Map<AuctionDto>(auction);
+
+            //var newauctionMessage = _mapper.Map<AuctionCreated>(newauction);
+            //await _publishEndpoint.Publish(newauctionMessage);
+
+            //After outbox setup, making everything as part of an EF transaction in memory before you call save changes
             var newauction = _mapper.Map<AuctionDto>(auction);
 
             var newauctionMessage = _mapper.Map<AuctionCreated>(newauction);
             await _publishEndpoint.Publish(newauctionMessage);
+            var result = await _context.SaveChangesAsync() > 0;
 
-            if(!result)
+            if (!result)
             {
                 return BadRequest("Could not save changes to the database");
             }
@@ -99,6 +107,8 @@ namespace AuctionService.Controllers
             // TODO: Add current user as seller
             if (auction.Seller != User.Identity.Name) return Forbid("Only seller can update the acution info.");
 
+            await _publishEndpoint.Publish<AuctionUpdated>(_mapper.Map<AuctionUpdated>(auction));
+
             var result = await _context.SaveChangesAsync() > 0;
 
             if (!result)
@@ -122,6 +132,7 @@ namespace AuctionService.Controllers
             auction.Seller = User.Identity.Name;
 
             _context.Auctions.Remove(auction);
+            await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
 
             var result = await _context.SaveChangesAsync() > 0;
 
