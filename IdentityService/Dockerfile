@@ -12,7 +12,6 @@ RUN dotnet restore /Carsties/Carsties.sln
 
 # Step2: copy other files, folders from the project
 COPY IdentityService /Carsties/IdentityService
-COPY Contracts /Carsties/Contracts
 
 # Step3: time to publish/run your app, so for easy access set your current working directory on the
 # docker file system to, to your project location
