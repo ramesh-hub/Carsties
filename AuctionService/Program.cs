@@ -31,7 +31,13 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        //cfg.Host("localhost", "/", h =>
+        cfg.UseRetry(r => 
+        {
+            r.Handle<RabbitMqConnectionException>();
+            r.Interval(5, TimeSpan.FromSeconds(10));
+        });
+		
+		//cfg.Host("localhost", "/", h =>
         //{
         //    h.Username("guest");
         //    h.Password("guest");
@@ -56,7 +62,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         //Authority is Identity Server URL. It tells our AuctionService who the Token issuer is aka Identity server.
         //All the activities are invisible to us. The Bearer token from the requests Authorization header is verified 
         //automatically for us by the framework against the Token authority/Issuer.
-        options.Authority = builder.Configuration["IdentityServerUrl"];
+        options.Authority = builder.Configuration["IdentityServiceUrl"];
         options.RequireHttpsMetadata = false; //As our IdentityServer is running local on port 5000
         //now can specify what parts you want to validate on the token
         options.TokenValidationParameters.ValidateAudience = false;
@@ -75,13 +81,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-try
-{
-    DbInitializer.InitDb(app);
-}
-catch (Exception ex)
-{
-    Console.WriteLine(ex.ToString());
-}
+var retryPolicy = Policy
+    .Handle<NpgsqlException>()
+    .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(10));
+
+retryPolicy.ExecuteAndCapture(() => DbInitializer.InitDb(app));
 
 app.Run();
