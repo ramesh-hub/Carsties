@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using AuctionService.Consumers;
+using Npgsql;
+using Polly;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
