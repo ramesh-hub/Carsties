@@ -37,9 +37,17 @@ builder.Services.AddMassTransit(x =>
         //    h.Password("guest");
         //});
 
+        //when containerized an auciton service, the container runs in its own machine and does not know what local host is, so be specific
+       cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host => {
+            host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
+            host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
+        });
+
         cfg.ConfigureEndpoints(context);
     });
 });
+
+    
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
