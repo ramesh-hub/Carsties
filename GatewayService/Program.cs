@@ -11,7 +11,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         //Authority is Identity Server URL. It tells our AuctionService who the Token issuer is aka Identity server.
         //All the activities are invisible to us. The Bearer token from the requests Authorization header is verified 
         //automatically for us by the framework against the Token authority/Issuer.
-        options.Authority = builder.Configuration["IdentityServerUrl"];
+        options.Authority = builder.Configuration["IdentityServiceUrl"];
         options.RequireHttpsMetadata = false; //As our IdentityServer is running local on port 5000
         //now can specify what parts you want to validate on the token
         options.TokenValidationParameters.ValidateAudience = false;

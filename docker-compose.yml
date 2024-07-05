@@ -29,9 +29,9 @@ services:
         environment: # Overwirtes our development environment file settings. We are reflecting most of the entries from our dev appsettings.js file here
             - ASPNETCORE_ENVIRONMENT=Development
             - ASPNETCORE_URLS=http://+:80 # this is where the app runs on the container
-            - RabbitMq__Host=localhost # rabbitmq did not work: In appsettings.js file it is an object so used __ and referencing the path to the above rabbitmq service 
+            - RabbitMq__Host=rabbitmq # rabbitmq did not work: In appsettings.js file it is an object so used __ and referencing the path to the above rabbitmq service 
             - ConnectionStrings__DefaultConnection=Server=postgres:5432;User Id=postgres;Password=naaYgu24$;Database=acutions
-            - IdentityServiceUrl:http://identity-svc
+            - IdentityServiceUrl=http://identity-svc
         ports:
             - 7001:80 #external:internal port in the docker
         depends_on:
