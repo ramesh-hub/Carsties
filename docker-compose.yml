@@ -21,6 +21,58 @@ services:
         ports:
             - 15672:15672
             - 5672:5672
-
-        
-  
+    auction-svc:
+        image: auction-svc:latest
+        build: 
+            context: . # I want to run it from current directory which is Carsties
+            dockerfile: AuctionService/Dockerfile
+        environment: # Overwirtes our development environment file settings. We are reflecting most of the entries from our dev appsettings.js file here
+            - ASPNETCORE_ENVIRONMENT=Development
+            - ASPNETCORE_URLS=http://+:80 # this is where the app runs on the container
+            - RabbitMq__Host=localhost # rabbitmq did not work: In appsettings.js file it is an object so used __ and referencing the path to the above rabbitmq service 
+            - ConnectionStrings__DefaultConnection=Server=postgres:5432;User Id=postgres;Password=naaYgu24$;Database=acutions
+            - IdentityServiceUrl:http://identity-svc
+        ports:
+            - 7001:80 #external:internal port in the docker
+        depends_on:
+            - postgres
+            - rabbitmq
+    search-svc:
+        image: search-svc:latest
+        build: 
+            context: . # I want to run it from current directory which is Carsties
+            dockerfile: SearchService/Dockerfile
+        environment: # Overwirtes our development environment file settings. We are reflecting most of the entries from our dev appsettings.js file here
+            - ASPNETCORE_ENVIRONMENT=Development
+            - ASPNETCORE_URLS=http://+:80 # this is where the app runs on the container
+            - RabbitMq__Host=rabbitmq # rabbitmq did not work: In appsettings.js file it is an object so used __ and referencing the path to the above rabbitmq service 
+            - ConnectionStrings__MongoDbConnection=mongodb://root:mongopw@mongodb
+            - AuctionServiceUrl=http://auction-svc
+        ports:
+            - 7002:80 #external:internal port in the docker
+        depends_on:
+            - mongodb
+            - rabbitmq
+    identity-svc:
+        image: identity-svc:latest
+        build: 
+            context: . # I want to run it from current directory which is Carsties
+            dockerfile: IdentityService/Dockerfile
+        environment: # Overwirtes our development environment file settings. We are reflecting most of the entries from our dev appsettings.js file here
+            - ASPNETCORE_ENVIRONMENT=Docker
+            - ASPNETCORE_URLS=http://+:80 # this is where the app runs on the container 
+            - ConnectionStrings__DefaultConnection=Server=postgres:5432;User Id=postgres;Password=naaYgu24$;Database=IdentityDb
+        ports:
+            - 5000:80 #external:internal port in the docker
+        depends_on:
+            - rabbitmq
+    gateway-svc:
+        image: gateway-svc:latest
+        build: 
+            context: . # I want to run it from current directory which is Carsties
+            dockerfile: GatewayService/Dockerfile
+        environment: # Overwirtes our development environment file settings. We are reflecting most of the entries from our dev appsettings.js file here
+            - ASPNETCORE_ENVIRONMENT=Docker
+            - ASPNETCORE_URLS=http://+:80 # this is where the app runs on the container 
+        ports:
+            - 6001:80 #external:internal port in the docker
